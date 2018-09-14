@@ -3,8 +3,13 @@ import os
 import pandas as pd
 
 
-def histdata(panel, id):
+def histid(panel, id):
     df = panel.major_xs(id).T
+    df.index.names = ('step', 'increment', 'total time', 'step time')
+    return df
+
+def histaxis(panel, axis):
+    df = panel.minor_xs('Component-'+str(axis)).T
     df.index.names = ('step', 'increment', 'total time', 'step time')
     return df
 
@@ -33,7 +38,7 @@ os.remove(logfile)
 panel = pd.Panel(dict)
 print(panel)
 
-ProgramList = ('EXIT', 'History', 'Index', 'Max', 'Min')
+ProgramList = ('EXIT', 'History_ID', 'History_Axis', 'Index', 'Max', 'Min', 'History (.xlsx)')
 for i, Program in enumerate(ProgramList):
     print(f" {i}:{Program}")
 
@@ -47,26 +52,38 @@ while True:
         elif ProgramNo == 1:
             for id in panel.axes[1]:
                 outfile = f"data_history({id}).csv"
-                histdata(panel, id).to_csv(outfile, index=True)
+                histid(panel, id).to_csv(outfile, index=True)
                 print('Out to', outfile)
 
         elif ProgramNo == 2:
+            axis = int(input("Enter axis --> "))
+            outfile = f"data_history(axis={axis}).csv"
+            histaxis(panel, axis).to_csv(outfile, index=True)
+            print('Out to', outfile)
+
+        elif ProgramNo == 3:
             step = int(input("Enter step --> "))
             increment = int(input("Enter increment --> "))
             outfile = f"data_index({step}-{increment}).csv"
             panel[time[(step, increment)]].to_csv(outfile)
             print('Out to', outfile)
 
-        elif ProgramNo == 3:
+        elif ProgramNo == 4:
             outfile = "data_max.csv"
             panel.max(axis=0).to_csv(outfile)
             print('Out to', outfile)
 
-        elif ProgramNo == 4:
+        elif ProgramNo == 5:
             outfile = "data_min.csv"
             panel.min(axis=0).to_csv(outfile)
             print('Out to', outfile)
 
+        elif ProgramNo == 6:
+            outfile = input("Enter file name --> ")+'.xlsx'
+            with pd.ExcelWriter(outfile) as writer:
+                for id in panel.axes[1]:
+                    histid(panel, id).to_excel(writer, sheet_name=str(id), merge_cells=False)
+            print('Out to', outfile)
     except:
         print('ERROR: invalid value')
         continue
